@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Would You Rather</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0055b8;
+            --primary-light: #eef6ff;
+            --accent: #00d1ff;
+            --navy: #0a192f;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --border: #cbd5e1;
+            --highlight: #0055b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior-y: contain; 
+        }
+
+        .container { max-width: 850px; width: 100%; }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+            padding: 3.5rem;
+            text-align: center;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        h1 { color: var(--navy); font-weight: 800; font-size: 2.8rem; margin-bottom: 0.5rem; letter-spacing: -0.03em; }
+        .subtitle { color: var(--text-light); font-size: 1.1rem; margin-bottom: 2rem; font-weight: 400; }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            /* Prevent text selection on tap */
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:hover { background-color: var(--navy); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        /* Question UI */
+        .progress-container { margin-bottom: 2rem; }
+        .progress-bar { width: 100%; height: 8px; background: var(--border); border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+        
+        .q-meta { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--primary); letter-spacing: 0.1em; margin-bottom: 1rem; display: block; }
+        .question-text { font-size: 2rem; color: var(--navy); margin-bottom: 2.5rem; font-weight: 700; line-height: 1.2; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .option-card {
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+            background: #fff;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .option-card:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .option-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Results UI */
+        .results-scroll { max-height: 60vh; overflow-y: auto; padding-right: 10px; text-align: left; margin-top: 1.5rem; }
+        
+        .result-block {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-header { font-weight: 800; font-size: 0.85rem; text-transform: uppercase; color: var(--text-light); margin-bottom: 1rem; display: flex; justify-content: space-between; }
+        
+        .result-options-container { display: flex; flex-direction: column; gap: 0.8rem; }
+
+        .res-opt {
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            color: var(--text-light);
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .res-opt.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        /* 📱 MOBILE RESPONSIVE STYLES 📱 */
+        @media (max-width: 650px) {
+            body { padding: 10px; }
+            .card { padding: 2rem 1.5rem; border-radius: 20px; }
+            h1 { font-size: 2.2rem; }
+            .subtitle { font-size: 1rem; margin-bottom: 1.5rem; }
+            .btn { width: 100%; padding: 1.2rem; font-size: 1.1rem; }
+            
+            .question-text { font-size: 1.6rem; margin-bottom: 1.5rem; }
+            .options-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .option-card { min-height: 120px; padding: 1.2rem; font-size: 1.1rem; }
+            
+            .instruction-box { padding: 1.5rem !important; margin-bottom: 2rem !important; }
+            .result-header { font-size: 0.8rem; }
+            .res-opt { font-size: 0.95rem; padding: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="screen-start" class="card screen active">
+            <h1>Would You Rather</h1>
+            <p class="subtitle">Aviation Analytics Edition</p>
+            <div class="instruction-box" style="background: var(--primary-light); padding: 2rem; border-radius: 16px; margin-bottom: 2.5rem; text-align: left;">
+                <p style="font-weight: 600; margin-bottom: 0.5rem; color: var(--navy);">Instructions:</p>
+                <p style="color: var(--text-main); line-height: 1.5; font-size: 0.95rem;">
+                    You will be presented with 10 debated scenarios across travel, food, and data science. 
+                    Pick the option you can justify best. No neutral ground allowed!
+                </p>
+            </div>
+            <button class="btn" onclick="startGame()">Start Activity</button>
+        </div>
+
+        <div id="screen-question" class="card screen">
+            <div class="progress-container">
+                <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+            </div>
+            <span class="q-meta" id="q-meta">Topic &bull; Question 1</span>
+            <h2 class="question-text" id="q-text">Would you rather...</h2>
+            
+            <div class="options-grid">
+                <div class="option-card" id="opt-1" onclick="selectAnswer(1)"></div>
+                <div class="option-card" id="opt-2" onclick="selectAnswer(2)"></div>
+            </div>
+        </div>
+
+        <div id="screen-results" class="card screen">
+            <h1>Debrief</h1>
+            <p class="subtitle">Here’s how you navigated the scenarios.</p>
+            
+            <div class="results-scroll" id="results-list"></div>
+
+            <div style="margin-top: 2rem;">
+                <button class="btn" onclick="location.reload()">Reset Activity</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            // TRAVEL / STANDBY (4)
+            {
+                topic: "Travel",
+                opt1: "Fly standby for First Class (50% chance of missing the flight)",
+                opt2: "Fly guaranteed Economy (permanently stuck in a middle seat)"
+            },
+            {
+                topic: "Travel",
+                opt1: "Endure a guaranteed 2-hour delay on every single flight",
+                opt2: "Face one unexpected 24-hour stranding per year"
+            },
+            {
+                topic: "Travel",
+                opt1: "Take 5:00 AM flights but always get upgraded to First Class",
+                opt2: "Fly at your ideal time but always sit next to the lavatory"
+            },
+            {
+                topic: "Travel",
+                opt1: "Be #1 on the standby list for a heavily oversold dream flight",
+                opt2: "Have a confirmed seat but endure a 12-hour overnight layover"
+            },
+            
+            // FOOD & LIFE (3)
+            {
+                topic: "Food & Life",
+                opt1: "Eat only airplane economy meals for a week",
+                opt2: "Eat only from airport terminal vending machines for a week"
+            },
+            {
+                topic: "Food & Life",
+                opt1: "Commute 1 hour to a beautiful office with catered lunches",
+                opt2: "Work fully remote but you have to cook all your own meals"
+            },
+            {
+                topic: "Food & Life",
+                opt1: "Have a personal assistant to handle all your life admin",
+                opt2: "Have a personal chef to prep every meal for you"
+            },
+
+            // ANALYTICS (3)
+            {
+                topic: "Analytics",
+                opt1: "Deploy a 99% accurate 'Black Box' model no one understands",
+                opt2: "Deploy a 75% accurate regression model that is easily explained"
+            },
+            {
+                topic: "Analytics",
+                opt1: "Work with perfectly clean data using only MS Excel",
+                opt2: "Work with massive, messy data using top-tier AI tools"
+            },
+            {
+                topic: "Analytics",
+                opt1: "Explain p-values to an angry executive who hates math",
+                opt2: "Debug a critical data pipeline failure at 2:00 AM"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let userAnswers = [];
+
+        function startGame() {
+            currentQuestion = 0;
+            userAnswers = [];
+            document.getElementById('screen-start').classList.remove('active');
+            document.getElementById('screen-question').classList.add('active');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('q-meta').innerHTML = `${q.topic} &bull; Q${currentQuestion + 1} of 10`;
+            document.getElementById('progress-fill').style.width = `${((currentQuestion) / questions.length) * 100}%`;
+            
+            // Small delay for smooth progress bar transition
+            setTimeout(() => {
+                document.getElementById('progress-fill').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+            }, 50);
+
+            document.getElementById('opt-1').innerText = q.opt1;
+            document.getElementById('opt-2').innerText = q.opt2;
+        }
+
+        function selectAnswer(index) {
+            userAnswers.push(index);
+            currentQuestion++;
+
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                renderResults();
+            }
+        }
+
+        function renderResults() {
+            const list = document.getElementById('results-list');
+            list.innerHTML = '';
+            
+            questions.forEach((q, i) => {
+                const picked = userAnswers[i];
+                const block = document.createElement('div');
+                block.className = 'result-block';
+                
+                block.innerHTML = `
+                    <div class="result-header">
+                        <span>${q.topic}</span>
+                        <span>Scenario ${i+1}</span>
+                    </div>
+                    <div class="result-options-container">
+                        <div class="res-opt ${picked === 1 ? 'selected' : ''}">${q.opt1}</div>
+                        <div class="res-opt ${picked === 2 ? 'selected' : ''}">${q.opt2}</div>
+                    </div>
+                `;
+                list.appendChild(block);
+            });
+
+            document.getElementById('screen-question').classList.remove('active');
+            document.getElementById('screen-results').classList.add('active');
+            window.scrollTo(0, 0); // Scroll to top for mobile convenience
+        }
+    </script>
+</body>
+</html>
